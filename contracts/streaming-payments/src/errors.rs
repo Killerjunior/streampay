@@ -147,6 +147,10 @@ pub enum StreamError {
     PolicyDurationAboveCeiling = 45,
     /// Stream deposit is below the governance policy floor.
     PolicyDepositBelowFloor = 46,
+    /// `confirm_payout` or `cancel_payout` was called without a pending binding.
+    NoPendingPayoutBinding = 47,
+    /// `confirm_payout` was called before the binding delay elapsed.
+    PayoutBindingNotReady = 48,
 }
 
 impl StreamError {
@@ -200,6 +204,8 @@ impl StreamError {
         StreamError::PolicyDurationBelowFloor,
         StreamError::PolicyDurationAboveCeiling,
         StreamError::PolicyDepositBelowFloor,
+        StreamError::NoPendingPayoutBinding,
+        StreamError::PayoutBindingNotReady,
     ];
 
     /// The stable numeric value carried across the contract boundary
