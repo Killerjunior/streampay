@@ -149,6 +149,6 @@ The harness measures:
 3. **Footprint Regression Harness**:
    - `hot_path_footprint_harness` in `contracts/streaming-payments/src/test.rs` permanently asserts that hot paths execute within instruction budgets:
      - `create_stream` <= 560,000 CPU
-     - `withdraw` <= 360,000 CPU
+     - `withdraw` <= 370,000 CPU (includes the payout destination lookup)
      - `cancel_stream` <= 540,000 CPU
-     - `withdraw_max` <= 350,000 CPU
+     - `withdraw_max` <= 370,000 CPU (includes the payout destination lookup)

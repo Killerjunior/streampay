@@ -8,7 +8,7 @@
 //!
 //! * the generated test matrix (`error_surface_test.rs`) can prove that every
 //!   *reachable* branch fires its declared code, and
-//! * `docs/ERRORS.md` is generated from the same table (see
+//! * `docs/ERROR_SURFACE.md` is generated from the same table (see
 //!   `examples/error_surface_doc.rs`) and diffed in CI.
 //!
 //! Because the table is data, a hand-maintained list of "which test covers
@@ -184,13 +184,30 @@ pub enum Branch {
     OraclePublishersNotConfigured,
     OracleReportTooOld,
     NotOraclePublisher,
+    // ---------------------------------------------- ownership transfer
+    /// `propose_ownership_transfer`: the caller is neither the sender nor the
+    /// recipient.
+    ProposeNotAuthorized,
+    /// `propose_ownership_transfer`: the target already holds that role.
+    ProposeInvalidTarget,
+    /// `propose_ownership_transfer`: an unexpired proposal already exists.
+    ProposeAlreadyPending,
+    /// `accept_ownership_transfer`: the caller is not the named target.
+    AcceptNotTarget,
+    /// `accept_ownership_transfer`: the proposal's acceptance window elapsed.
+    OwnershipProposalExpired,
+    /// `accept_ownership_transfer` / `cancel_ownership_transfer`: no proposal
+    /// is stored for the stream.
+    NoPendingOwnership,
+    /// `cancel_ownership_transfer`: the caller did not create the proposal.
+    CancelProposalNotProposer,
 }
 
 impl Branch {
     /// Every branch, in declaration order. The matrix test walks this list and
     /// the coverage test requires each [`StreamError`] variant to be produced by
     /// one of these (or retired).
-    pub const ALL: [Branch; 72] = [
+    pub const ALL: [Branch; 79] = [
         Branch::CreateDepositNonPositive,
         Branch::CreateStartTimeInPast,
         Branch::CreateInvalidTimeRange,
@@ -261,6 +278,13 @@ impl Branch {
         Branch::OraclePublishersNotConfigured,
         Branch::OracleReportTooOld,
         Branch::NotOraclePublisher,
+        Branch::ProposeNotAuthorized,
+        Branch::ProposeInvalidTarget,
+        Branch::ProposeAlreadyPending,
+        Branch::AcceptNotTarget,
+        Branch::OwnershipProposalExpired,
+        Branch::NoPendingOwnership,
+        Branch::CancelProposalNotProposer,
         Branch::PayoutBindingMissing,
         Branch::PayoutBindingNotReady,
     ];
@@ -291,6 +315,8 @@ impl Branch {
                 "cancel_stream",
                 "top_up",
                 "sponsored_withdraw",
+                "propose_ownership_transfer",
+                "accept_ownership_transfer",
             ],
             Branch::StreamNotActive => &[
                 "withdraw",
@@ -298,6 +324,8 @@ impl Branch {
                 "cancel_stream",
                 "top_up",
                 "sponsored_withdraw",
+                "propose_ownership_transfer",
+                "accept_ownership_transfer",
             ],
             Branch::CapacityOverflow => &["create_stream", "top_up"],
             Branch::RateProductOverflow => &[
@@ -383,6 +411,9 @@ impl Branch {
                 "bind_payout",
                 "confirm_payout",
                 "cancel_payout",
+                "propose_ownership_transfer",
+                "accept_ownership_transfer",
+                "cancel_ownership_transfer",
             ],
             Branch::MigrationNotFrozen | Branch::AlreadyMigrated => &["migrate_storage"],
             Branch::ExecuteUpgradeNoPending | Branch::TimelockNotExpired => &["execute_upgrade"],
@@ -398,6 +429,16 @@ impl Branch {
             Branch::OraclePublishersNotConfigured
             | Branch::OracleReportTooOld
             | Branch::NotOraclePublisher => &["submit_oracle_time"],
+            Branch::ProposeNotAuthorized
+            | Branch::ProposeInvalidTarget
+            | Branch::ProposeAlreadyPending => &["propose_ownership_transfer"],
+            Branch::AcceptNotTarget | Branch::OwnershipProposalExpired => {
+                &["accept_ownership_transfer"]
+            }
+            Branch::NoPendingOwnership => {
+                &["accept_ownership_transfer", "cancel_ownership_transfer"]
+            }
+            Branch::CancelProposalNotProposer => &["cancel_ownership_transfer"],
             Branch::PayoutBindingMissing => &["confirm_payout", "cancel_payout"],
             Branch::PayoutBindingNotReady => &["confirm_payout"],
         }
@@ -480,12 +521,19 @@ impl Branch {
             Branch::OraclePublishersNotConfigured => StreamError::OraclePublishersNotConfigured,
             Branch::OracleReportTooOld => StreamError::OracleReportTooOld,
             Branch::NotOraclePublisher => StreamError::NotOraclePublisher,
+            Branch::ProposeNotAuthorized
+            | Branch::AcceptNotTarget
+            | Branch::CancelProposalNotProposer => StreamError::NotAuthorized,
+            Branch::ProposeInvalidTarget => StreamError::InvalidTransferTarget,
+            Branch::ProposeAlreadyPending => StreamError::OwnershipProposalPending,
+            Branch::OwnershipProposalExpired => StreamError::OwnershipProposalExpired,
+            Branch::NoPendingOwnership => StreamError::NoPendingOwnership,
             Branch::PayoutBindingMissing => StreamError::NoPendingPayoutBinding,
             Branch::PayoutBindingNotReady => StreamError::PayoutBindingNotReady,
         }
     }
 
-    /// Human-readable condition, used to generate `docs/ERRORS.md`.
+    /// Human-readable condition, used to generate `docs/ERROR_SURFACE.md`.
     pub const fn condition(self) -> &'static str {
         match self {
             Branch::CreateDepositNonPositive => "deposit_amount is zero or negative",
@@ -614,6 +662,21 @@ impl Branch {
             Branch::OraclePublishersNotConfigured => "oracle publishers are not configured",
             Branch::OracleReportTooOld => "oracle report timestamp is too far in the past or future",
             Branch::NotOraclePublisher => "the caller is not an authorized oracle publisher",
+            Branch::ProposeNotAuthorized => {
+                "the caller is neither the current sender nor the current recipient"
+            }
+            Branch::ProposeInvalidTarget => "the proposed target already holds that role",
+            Branch::ProposeAlreadyPending => {
+                "an unexpired ownership proposal already exists for the stream"
+            }
+            Branch::AcceptNotTarget => "the caller is not the proposal's named new owner",
+            Branch::OwnershipProposalExpired => {
+                "the proposal's acceptance window has elapsed"
+            }
+            Branch::NoPendingOwnership => "no ownership proposal is stored for the stream",
+            Branch::CancelProposalNotProposer => {
+                "the caller did not create the pending ownership proposal"
+            }
             Branch::PayoutBindingMissing => "no pending payout binding exists",
             Branch::PayoutBindingNotReady => "the payout binding delay has not elapsed",
         }

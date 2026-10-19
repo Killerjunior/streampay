@@ -36,10 +36,10 @@ pub enum StreamError {
     /// No stream exists with the provided id.
     StreamNotFound = 1,
     /// **Retired — never produced.** Reserved role check; retained so the
-    /// numeric code is never reused. See `docs/ERRORS.md`.
+    /// numeric code is never reused. See `docs/ERROR_SURFACE.md`.
     NotStreamSender = 2,
     /// **Retired — never produced.** Reserved role check; retained so the
-    /// numeric code is never reused. See `docs/ERRORS.md`.
+    /// numeric code is never reused. See `docs/ERROR_SURFACE.md`.
     NotStreamRecipient = 3,
     /// The stream is not `cancelable`, so the recipient cannot cancel it.
     StreamNotCancellable = 4,
@@ -176,10 +176,20 @@ pub enum StreamError {
     OracleReportTooOld = 58,
     /// The caller is not an authorized oracle publisher.
     NotOraclePublisher = 59,
+    /// No two-step ownership proposal exists for this stream.
+    NoPendingOwnership = 60,
+    /// The pending ownership proposal's acceptance window has elapsed; the
+    /// target must be proposed again by the current role holder.
+    OwnershipProposalExpired = 61,
+    /// The proposed new owner is already the current holder of that role.
+    InvalidTransferTarget = 62,
+    /// An unexpired ownership proposal already exists for this stream; cancel
+    /// or accept it before proposing another.
+    OwnershipProposalPending = 63,
     /// `confirm_payout` or `cancel_payout` was called without a pending binding.
-    NoPendingPayoutBinding = 60,
+    NoPendingPayoutBinding = 64,
     /// `confirm_payout` was called before the binding delay elapsed.
-    PayoutBindingNotReady = 61,
+    PayoutBindingNotReady = 65,
 }
 
 impl StreamError {
@@ -246,6 +256,10 @@ impl StreamError {
         StreamError::OraclePublishersNotConfigured,
         StreamError::OracleReportTooOld,
         StreamError::NotOraclePublisher,
+        StreamError::NoPendingOwnership,
+        StreamError::OwnershipProposalExpired,
+        StreamError::InvalidTransferTarget,
+        StreamError::OwnershipProposalPending,
         StreamError::NoPendingPayoutBinding,
         StreamError::PayoutBindingNotReady,
     ];
