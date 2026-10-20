@@ -1087,6 +1087,23 @@ fn withdrawals_route_to_binding_and_still_require_original_recipient_auth() {
 }
 
 #[test]
+fn cancellation_routes_accrued_recipient_leg_to_active_binding() {
+    let f = Fixture::setup();
+    let payout = Address::generate(&f.env);
+    let id = f.create_stream(DEPOSIT, 0, 10 * DAY, false);
+    f.client.mock_all_auths().bind_payout(&f.recipient, &payout);
+    f.advance_time(crate::PAYOUT_BINDING_DELAY_SECONDS);
+    f.client.mock_all_auths().confirm_payout(&f.recipient);
+    f.advance_time(DAY);
+
+    let accrued = f.client.mock_all_auths().available(&id);
+    f.client.mock_all_auths().cancel_stream(&f.sender, &id);
+
+    assert_eq!(TokenClient::new(&f.env, &f.token).balance(&payout), accrued);
+    assert_eq!(TokenClient::new(&f.env, &f.token).balance(&f.recipient), 0);
+}
+
+#[test]
 fn pending_payout_does_not_route_claims_before_confirmation() {
     let f = Fixture::setup();
     let payout = Address::generate(&f.env);

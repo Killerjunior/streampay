@@ -737,6 +737,14 @@ fn probe(branch: Branch) -> Option<StreamError> {
                 .mock_all_auths()
                 .try_confirm_payout(&f.recipient)))
         }
+        Branch::InvalidPayoutAddress => {
+            let f = Fixture::setup_quiet();
+            let contract_address = f.client.address.clone();
+            Some(rejected!(f
+                .client
+                .mock_all_auths()
+                .try_bind_payout(&f.recipient, &contract_address,)))
+        }
         Branch::PolicyDepositBelowFloor => {
             let f = Fixture::setup_quiet();
             let now = f.env.ledger().timestamp();
@@ -1165,7 +1173,8 @@ fn stream_error_variant_list_is_exhaustive() {
             | StreamError::NoPendingOwnership
             | StreamError::OwnershipProposalExpired
             | StreamError::InvalidTransferTarget
-            | StreamError::OwnershipProposalPending => StreamError::ALL.contains(&e),
+            | StreamError::OwnershipProposalPending
+            | StreamError::InvalidPayoutAddress => StreamError::ALL.contains(&e),
         }
     }
 

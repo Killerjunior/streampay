@@ -796,6 +796,9 @@ impl StreamingPayments {
 
     /// Proposes a payout destination. The recipient's original address remains
     /// the sole authorization principal; confirmation is delayed by 24 hours.
+    /// The destination must be able to receive every stream asset for this
+    /// recipient. The contract rejects itself as a destination, but generic
+    /// SEP-41 tokens do not provide a uniform trustline preflight.
     pub fn bind_payout(
         env: Env,
         recipient: Address,
@@ -803,6 +806,9 @@ impl StreamingPayments {
     ) -> Result<u64, StreamError> {
         Self::require_not_frozen(&env)?;
         recipient.require_auth();
+        if payout_address == env.current_contract_address() {
+            return Err(surface::reject(Branch::InvalidPayoutAddress));
+        }
         let activates_at = env
             .ledger()
             .timestamp()
@@ -856,9 +862,15 @@ impl StreamingPayments {
         Ok(())
     }
 
-    /// Effective destination for recipient withdrawals; defaults to recipient.
+    /// Effective destination for recipient payouts; defaults to recipient.
     pub fn payout_address(env: Env, recipient: Address) -> Address {
         stream::payout_address(&env, &recipient)
+    }
+
+    /// Current ledger timestamp in seconds, for clients displaying on-chain
+    /// time-based actions such as payout-binding confirmation.
+    pub fn ledger_timestamp(env: Env) -> u64 {
+        env.ledger().timestamp()
     }
 
     /// Current pending destination and activation timestamp, if one exists.
@@ -992,7 +1004,7 @@ impl StreamingPayments {
                     &env,
                     &s.token,
                     &current_contract,
-                    &stream::muxed(&s.recipient),
+                    &stream::muxed(&stream::payout_address(&env, &s.recipient)),
                     recipient_amount,
                     Branch::RecipientPayoutFailed,
                 )?;

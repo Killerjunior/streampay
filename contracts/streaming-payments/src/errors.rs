@@ -190,6 +190,8 @@ pub enum StreamError {
     NoPendingPayoutBinding = 64,
     /// `confirm_payout` was called before the binding delay elapsed.
     PayoutBindingNotReady = 65,
+    /// The contract itself cannot be a payout destination.
+    InvalidPayoutAddress = 66,
 }
 
 impl StreamError {
@@ -262,6 +264,7 @@ impl StreamError {
         StreamError::OwnershipProposalPending,
         StreamError::NoPendingPayoutBinding,
         StreamError::PayoutBindingNotReady,
+        StreamError::InvalidPayoutAddress,
     ];
 
     /// The stable numeric value carried across the contract boundary

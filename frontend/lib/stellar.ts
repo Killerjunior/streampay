@@ -207,8 +207,13 @@ const STREAM_ERRORS: Record<number, string> = {
   57: "OraclePublishersNotConfigured",
   58: "OracleReportTooOld",
   59: "NotOraclePublisher",
-  60: "NoPendingPayoutBinding",
-  61: "PayoutBindingNotReady",
+  60: "NoPendingOwnership",
+  61: "OwnershipProposalExpired",
+  62: "InvalidTransferTarget",
+  63: "OwnershipProposalPending",
+  64: "NoPendingPayoutBinding",
+  65: "PayoutBindingNotReady",
+  66: "InvalidPayoutAddress",
 };
 
 /** Rewrites raw simulation/tx error text into a readable StreamError name. */
@@ -872,11 +877,22 @@ export async function readAvailable(streamId: string): Promise<bigint> {
   return BigInt(scValToNative(retval) as bigint);
 }
 
-/** Effective destination for recipient claims (the recipient when unbound). */
+/** Effective destination for recipient payouts (the recipient when unbound). */
 export async function readPayoutAddress(recipient: string): Promise<string> {
   const retval = await simulateRead(CONTRACT_ID, "payout_address", [scAddr(recipient)]);
   if (!retval) throw new Error("Payout address unavailable");
   return String(scValToNative(retval));
+}
+
+/** Current Soroban ledger timestamp in seconds, read without signing. */
+export async function readLedgerTimestamp(): Promise<number | null> {
+  const retval = await simulateRead(CONTRACT_ID, "ledger_timestamp", []);
+  if (!retval) return null;
+  try {
+    return Number(scValToNative(retval));
+  } catch {
+    return null;
+  }
 }
 
 /** Pending delayed destination, or null when no change is waiting. */

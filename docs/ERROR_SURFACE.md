@@ -73,6 +73,7 @@ Every expected failure is a `StreamError` with a stable numeric code. This docum
 | 63 | `OwnershipProposalPending` | reachable (1 branch(es)) | `propose_ownership_transfer` | an unexpired ownership proposal already exists for the stream |
 | 64 | `NoPendingPayoutBinding` | reachable (1 branch(es)) | `cancel_payout`, `confirm_payout` | no pending payout binding exists |
 | 65 | `PayoutBindingNotReady` | reachable (1 branch(es)) | `confirm_payout` | the payout binding delay has not elapsed |
+| 66 | `InvalidPayoutAddress` | reachable (1 branch(es)) | `bind_payout` | the payout destination is the streaming contract |
 
 ## Branch matrix (entrypoint × condition → error)
 
@@ -157,6 +158,7 @@ Every expected failure is a `StreamError` with a stable numeric code. This docum
 | `CancelProposalNotProposer` | `cancel_ownership_transfer` | `NotAuthorized` | 12 | the caller did not create the pending ownership proposal | reachable |
 | `PayoutBindingMissing` | `confirm_payout`, `cancel_payout` | `NoPendingPayoutBinding` | 64 | no pending payout binding exists | reachable |
 | `PayoutBindingNotReady` | `confirm_payout` | `PayoutBindingNotReady` | 65 | the payout binding delay has not elapsed | reachable |
+| `InvalidPayoutAddress` | `bind_payout` | `InvalidPayoutAddress` | 66 | the payout destination is the streaming contract | reachable |
 
 ## Retired codes
 

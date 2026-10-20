@@ -179,6 +179,8 @@ pub enum Branch {
     // --------------------------------------------------------- payout binding
     PayoutBindingMissing,
     PayoutBindingNotReady,
+    /// `bind_payout`: the streaming contract cannot receive its own payouts.
+    InvalidPayoutAddress,
     // ------------------------------------------------------------- oracle
     InvalidOracleThreshold,
     OraclePublishersNotConfigured,
@@ -207,7 +209,7 @@ impl Branch {
     /// Every branch, in declaration order. The matrix test walks this list and
     /// the coverage test requires each [`StreamError`] variant to be produced by
     /// one of these (or retired).
-    pub const ALL: [Branch; 79] = [
+    pub const ALL: [Branch; 80] = [
         Branch::CreateDepositNonPositive,
         Branch::CreateStartTimeInPast,
         Branch::CreateInvalidTimeRange,
@@ -287,6 +289,7 @@ impl Branch {
         Branch::CancelProposalNotProposer,
         Branch::PayoutBindingMissing,
         Branch::PayoutBindingNotReady,
+        Branch::InvalidPayoutAddress,
     ];
 
     /// The entrypoint(s) through which this branch can fire. Shared helpers
@@ -441,6 +444,7 @@ impl Branch {
             Branch::CancelProposalNotProposer => &["cancel_ownership_transfer"],
             Branch::PayoutBindingMissing => &["confirm_payout", "cancel_payout"],
             Branch::PayoutBindingNotReady => &["confirm_payout"],
+            Branch::InvalidPayoutAddress => &["bind_payout"],
         }
     }
 
@@ -530,6 +534,7 @@ impl Branch {
             Branch::NoPendingOwnership => StreamError::NoPendingOwnership,
             Branch::PayoutBindingMissing => StreamError::NoPendingPayoutBinding,
             Branch::PayoutBindingNotReady => StreamError::PayoutBindingNotReady,
+            Branch::InvalidPayoutAddress => StreamError::InvalidPayoutAddress,
         }
     }
 
@@ -679,6 +684,7 @@ impl Branch {
             }
             Branch::PayoutBindingMissing => "no pending payout binding exists",
             Branch::PayoutBindingNotReady => "the payout binding delay has not elapsed",
+            Branch::InvalidPayoutAddress => "the payout destination is the streaming contract",
         }
     }
 

@@ -14,6 +14,7 @@ import {
   confirmPayout,
   cancelPayout,
   readPayoutAddress,
+  readLedgerTimestamp,
   readPendingPayout,
   readStream,
   fetchStreamsFor,
@@ -52,10 +53,29 @@ export default function Home() {
   const [now, setNow] = useState(0);
 
   useEffect(() => {
-    const tick = () => setNow(Math.floor(Date.now() / 1000));
-    tick();
+    let ledgerTime = 0;
+    let syncedAt = 0;
+    let disposed = false;
+    const syncLedgerTime = async () => {
+      const timestamp = await readLedgerTimestamp();
+      if (disposed || timestamp === null) return;
+      ledgerTime = timestamp;
+      syncedAt = Date.now();
+      setNow(timestamp);
+    };
+    const tick = () => {
+      if (ledgerTime > 0) {
+        setNow(ledgerTime + Math.floor((Date.now() - syncedAt) / 1000));
+      }
+    };
+    void syncLedgerTime();
     const timer = window.setInterval(tick, 1000);
-    return () => window.clearInterval(timer);
+    const refresh = window.setInterval(() => void syncLedgerTime(), 30_000);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+      window.clearInterval(refresh);
+    };
   }, []);
 
   async function refreshPayoutBinding(owner: string) {

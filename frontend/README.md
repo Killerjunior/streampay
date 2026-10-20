@@ -71,15 +71,14 @@ For a one-command deployed contract + demo stream, see
   asset costs one extra signature instead of failing at simulation.
 - Read-only calls (`get_stream`, `available`, the index views, `allowance`)
   simulate against the RPC without signing.
-- Contract errors decode to `StreamError` names, including the scheduled-intent
-  codes (18–25) and the transfer-failure codes: `DepositTransferFailed` (26),
-  `TopUpTransferFailed` (27), `RecipientPayoutFailed` (28),
-  `SenderRefundFailed` (29), `TreasuryPayoutFailed` (30), policy/upgrade codes
-  (31–41), stream-policy codes (42–46), and payout-binding errors (47–48).
+- Contract errors decode to `StreamError` names; the generated
+  [error catalog](../docs/errors.md) is the authority for names and wire codes.
 - A payout change needs a second recipient signature after 24 hours; the active
-  destination is used by `withdraw` and `withdraw_max`, never by cancellation.
-- Payout binding errors are appended as `NoPendingPayoutBinding` (60) and
-  `PayoutBindingNotReady` (61), after the batch, sponsor, and oracle errors.
+  destination is used by `withdraw`, `withdraw_max`, and the accrued recipient
+  leg of `cancel_stream`. Destinations cannot be the streaming contract and
+  must support every asset used by the recipient's streams; issued assets need
+  the corresponding trustline. Generic SEP-41 tokens do not support a uniform
+  trustline preflight, so an unreceivable payout fails atomically.
 - Amounts are **smallest token units** (stroops for classic assets).
 - The batch form accepts `address,rate,duration` CSV rows. Rate is an integer
   in smallest token units per second; duration is integer seconds. Each

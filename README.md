@@ -122,10 +122,16 @@ individual `StreamCreated` events; fee-enabled batches still emit one
 [Protocol fees](#protocol-fees-optional) below. Soroban transaction resource
 limits bound the practical maximum batch size.
 
-Payout routing affects recipient `withdraw` and `withdraw_max` only. Both
-continue to require the original recipient's authorization; cancellation
-settlements retain their existing destinations. A proposed destination must
-wait 24 hours and be confirmed in a second recipient-authorized transaction.
+Payout routing affects recipient `withdraw`, `withdraw_max`, and the accrued
+recipient leg of `cancel_stream`. Withdrawals require the original recipient's
+authorization; sender cancellation uses the active recipient binding for the
+accrued leg. A proposed destination must wait 24 hours and be confirmed in a
+second recipient-authorized transaction. The
+destination cannot be the streaming contract and must be able to receive every
+asset used by the recipient's streams (including the required trustline for
+issued assets). Generic SEP-41 tokens do not expose a uniform trustline
+preflight, so a destination that cannot receive a token causes that payout to
+fail atomically.
 The delay gives a recipient time to detect and cancel a change after temporary
 key exposure; it cannot protect an account whose key remains compromised.
 
@@ -159,7 +165,7 @@ Any SEP-41-compatible asset can fund a stream: an issued asset via its
 Stellar Asset Contract id (e.g. USDC on testnet) or **native XLM** via its
 own SAC — the frontend's asset selector resolves the choice for you.
 
-Creating a stream requires a prior token approval: `token.approve(sender, <contract id>, deposit, exp)` — the UI checks the allowance and signs the approval only when it is short. All failures return typed `StreamError` codes (no panics) — see `contracts/streaming-payments/src/errors.rs`. Token-transfer failures carry their own codes (`DepositTransferFailed` 26, `TopUpTransferFailed` 27, `RecipientPayoutFailed` 28, `SenderRefundFailed` 29, `TreasuryPayoutFailed` 30): a token's own error numbers live in the same `Error(Contract, #N)` namespace and are never allowed to masquerade as StreamPay's. Payout binding errors follow batch, sponsor, and oracle errors as `NoPendingPayoutBinding` 60 and `PayoutBindingNotReady` 61.
+Creating a stream requires a prior token approval: `token.approve(sender, <contract id>, deposit, exp)` — the UI checks the allowance and signs the approval only when it is short. All failures return typed `StreamError` codes (no panics); the generated [error catalog](./docs/errors.md) is the authority for names and wire codes. Token-transfer failures are also listed there: a token's own error numbers live in the same `Error(Contract, #N)` namespace and are never allowed to masquerade as StreamPay's.
 
 ### Scheduled intents (keeper-executable cron)
 
