@@ -227,9 +227,13 @@ const STREAM_ERRORS: Record<number, string> = {
   77: "GovernanceDuplicateSignature",
   78: "GovernanceSignaturesInsufficient",
   79: "GovernanceTimelockRequired",
-  80: "NoPendingPayoutBinding",
-  81: "PayoutBindingNotReady",
-  82: "InvalidPayoutAddress",
+  80: "NoPendingRateChange",
+  81: "RateProposalExpired",
+  82: "RateProposalPending",
+  83: "TooManyRateSegments",
+  84: "NoPendingPayoutBinding",
+  85: "PayoutBindingNotReady",
+  86: "InvalidPayoutAddress",
 };
 
 /** Rewrites raw simulation/tx error text into a readable StreamError name. */
